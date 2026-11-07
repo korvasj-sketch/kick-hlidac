@@ -1,7 +1,7 @@
 /* Kick Hlidac chatu - PWA service worker.
    Staticky obsah: sit-first (aby se vzdy nasadila nova verze).
    Dotazy na Kick API se NECACHUJI - jdou vzdy primo na sit. */
-const CACHE = "kickhlidac-v1";
+const CACHE = "kickhlidac-v2";
 const ASSETS = ["./", "./index.html", "./manifest.webmanifest",
                 "./icon-180.png", "./icon-192.png", "./icon-512.png"];
 

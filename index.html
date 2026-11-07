@@ -74,6 +74,15 @@
       font-weight:600; align-items:center; gap:14px; }
   .filterbar.on { display:flex; }
   .filterbar button { margin-left:auto; }
+  .tagblock { margin:8px 0 12px; }
+  .tagblock .lbl { display:block; min-width:0; margin-bottom:5px; }
+  .tags { display:flex; flex-wrap:wrap; gap:6px; min-height:24px; margin-bottom:5px; }
+  .chip { display:inline-flex; align-items:center; gap:7px; background:#1d3313;
+          border:1px solid #53FC18; color:#eaeaea; border-radius:15px;
+          padding:3px 7px 3px 11px; font-size:13px; }
+  .chip button { background:none; border:none; color:#53FC18; padding:0 2px;
+                 min-height:0; font-size:13px; line-height:1; cursor:pointer; }
+  .taghint { color:#a2a2a2; font-size:11px; margin-top:3px; }
   .foot { color:#909090; font-size:12px; margin-top:22px; text-align:center; }
   .ioshint { display:none; align-items:flex-start; gap:10px; background:#14240f;
       border:1px solid #53FC18; border-radius:8px; padding:11px 14px;
@@ -162,10 +171,20 @@
   <div class="grid2">
     <div>
       <fieldset><legend>Co je ve zprávě</legend>
-        <label><span class="lbl">Zakázaná slova (čárkou):</span><input class="wide" type="text" id="banned_words" placeholder="spam, reklama"></label>
+        <div class="tagblock">
+          <span class="lbl">Zakázaná slova:</span>
+          <div class="tags" id="tags_banned_words"></div>
+          <input class="wide" type="text" id="input_banned_words" placeholder="Napiš hlídaný výraz a stiskni Enter">
+          <div class="taghint">↵ Enter přidá do seznamu · klik na ✖ výraz odebere</div>
+        </div>
         <label><input type="checkbox" id="match_substring"> Hledat i uvnitř slova (chytí překlepy)</label>
         <label><input type="checkbox" id="block_links"> Hlásit odkazy</label>
-        <label><span class="lbl">Povolené domény:</span><input class="wide" type="text" id="allowed_domains" placeholder="kick.com, twitch.tv"></label>
+        <div class="tagblock">
+          <span class="lbl">Povolené domény:</span>
+          <div class="tags" id="tags_allowed_domains"></div>
+          <input class="wide" type="text" id="input_allowed_domains" placeholder="Napiš doménu a stiskni Enter (např. kick.com)">
+          <div class="taghint">↵ Enter přidá do seznamu · klik na ✖ odebere</div>
+        </div>
         <label><span class="lbl">Max. podíl VELKÝCH písmen (%):</span><input type="number" id="max_caps_ratio" min="0" max="100"></label>
         <label><span class="lbl">Alespoň tolik písmen:</span><input type="number" id="min_caps_length" min="1" max="200"></label>
         <label><span class="lbl">Max. délka zprávy (znaků):</span><input type="number" id="max_length" min="0" max="2000"></label>
@@ -178,8 +197,18 @@
     </div>
     <div>
       <fieldset><legend>Koho sledovat / ignorovat</legend>
-        <label><span class="lbl">Sledovaní uživatelé:</span><input class="wide" type="text" id="watched_users" placeholder="jména čárkou"></label>
-        <label><span class="lbl">Ignorovat uživatele:</span><input class="wide" type="text" id="ignore_users" placeholder="boti, moderátoři"></label>
+        <div class="tagblock">
+          <span class="lbl">Sledovaní uživatelé:</span>
+          <div class="tags" id="tags_watched_users"></div>
+          <input class="wide" type="text" id="input_watched_users" placeholder="Napiš jméno a stiskni Enter">
+          <div class="taghint">↵ Enter přidá do seznamu · klik na ✖ odebere</div>
+        </div>
+        <div class="tagblock">
+          <span class="lbl">Ignorovat uživatele:</span>
+          <div class="tags" id="tags_ignore_users"></div>
+          <input class="wide" type="text" id="input_ignore_users" placeholder="Napiš jméno a stiskni Enter">
+          <div class="taghint">↵ Enter přidá do seznamu · klik na ✖ odebere</div>
+        </div>
         <label><input type="checkbox" id="ignore_moderators"> Ignorovat moderátory a streamera</label>
         <label><input type="checkbox" id="notify_newcomer"> Upozornit na nováčka (první zpráva od spuštění)</label>
         <label><input type="checkbox" id="notify_watched"> Upozornit na sledované</label>
@@ -254,19 +283,20 @@ const S = { running:false, timer:null, channelId:null, seen:new Set(),
   firstPass:true, startedAt:null, userFilter:null, ruleFilter:null, audio:null };
 
 function saveCfg(){
+  flushTags();
   cfg.channel = $("channel").value.trim();
-  cfg.banned_words = list($("banned_words").value);
+  cfg.banned_words = TAGS.banned_words.slice();
   cfg.match_substring = $("match_substring").checked;
   cfg.block_links = $("block_links").checked;
-  cfg.allowed_domains = list($("allowed_domains").value);
+  cfg.allowed_domains = TAGS.allowed_domains.slice();
   cfg.max_caps_ratio = +$("max_caps_ratio").value;
   cfg.min_caps_length = +$("min_caps_length").value;
   cfg.max_length = +$("max_length").value;
   cfg.flood_count = +$("flood_count").value;
   cfg.flood_seconds = +$("flood_seconds").value;
   cfg.repeat_count = +$("repeat_count").value;
-  cfg.watched_users = list($("watched_users").value);
-  cfg.ignore_users = list($("ignore_users").value);
+  cfg.watched_users = TAGS.watched_users.slice();
+  cfg.ignore_users = TAGS.ignore_users.slice();
   cfg.ignore_moderators = $("ignore_moderators").checked;
   cfg.notify_newcomer = $("notify_newcomer").checked;
   cfg.notify_watched = $("notify_watched").checked;
@@ -278,10 +308,11 @@ function saveCfg(){
 }
 function fillCfg(){
   $("channel").value = cfg.channel;
-  $("banned_words").value = (cfg.banned_words||[]).join(", ");
-  $("allowed_domains").value = (cfg.allowed_domains||[]).join(", ");
-  $("watched_users").value = (cfg.watched_users||[]).join(", ");
-  $("ignore_users").value = (cfg.ignore_users||[]).join(", ");
+  for (const k of TAG_KEYS) {
+    TAGS[k] = (cfg[k] || []).slice();
+    $("input_" + k).value = "";
+    renderTags(k);
+  }
   for (const k of ["match_substring","block_links","ignore_moderators","notify_newcomer","notify_watched","notify_sound","skip_initial"])
     $(k).checked = !!cfg[k];
   for (const k of ["max_caps_ratio","min_caps_length","max_length","flood_count","flood_seconds","repeat_count","poll_interval","max_messages"])
@@ -518,6 +549,47 @@ if (isIOS && !standalone && !localStorage.getItem("iosHintOff")) $("iosHint").cl
 $("iosClose").onclick = () => { $("iosHint").classList.remove("on"); localStorage.setItem("iosHintOff","1"); };
 if ("serviceWorker" in navigator && location.protocol === "https:")
   navigator.serviceWorker.register("sw.js").catch(()=>{});
+
+// --- seznamy vyrazu: napis + Enter -> ulozi se do viditelneho seznamu ---
+const TAG_KEYS = ["banned_words", "allowed_domains", "watched_users", "ignore_users"];
+const TAGS = {};
+
+function renderTags(k){
+  const box = $("tags_" + k);
+  box.innerHTML = TAGS[k].length
+    ? TAGS[k].map((v, i) =>
+        `<span class="chip">${esc(v)}<button type="button" data-k="${k}" data-i="${i}" title="Odebrat">✖</button></span>`).join("")
+    : '<span class="muted" style="font-size:12px">zatím nic – napiš výraz a dej Enter</span>';
+}
+function addTags(k, raw){
+  const parts = String(raw || "").split(",")
+    .map(x => x.trim().replace(/^@/, "").toLowerCase()).filter(Boolean);
+  for (const v of parts) if (!TAGS[k].includes(v)) TAGS[k].push(v);
+  renderTags(k);
+}
+function flushTags(){
+  for (const k of TAG_KEYS) {
+    const inp = $("input_" + k);
+    if (inp && inp.value.trim()) { addTags(k, inp.value); inp.value = ""; }
+  }
+}
+for (const k of TAG_KEYS) {
+  TAGS[k] = [];
+  const inp = $("input_" + k);
+  inp.addEventListener("keydown", e => {
+    if (e.key === "Enter") { e.preventDefault(); addTags(k, inp.value); inp.value = ""; }
+  });
+  // na iPhonu i kdyz clovek jen opusti policko
+  inp.addEventListener("blur", () => {
+    if (inp.value.trim()) { addTags(k, inp.value); inp.value = ""; }
+  });
+  $("tags_" + k).addEventListener("click", e => {
+    const b = e.target.closest("button[data-i]");
+    if (!b) return;
+    TAGS[k].splice(+b.dataset.i, 1);
+    renderTags(k);
+  });
+}
 
 fillCfg(); refreshAll(); status("Připraveno – zadej kanál a klikni Spustit hlídání.");
 </script>
