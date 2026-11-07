@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Kick Hlídač chatu</title>
+<meta name="description" content="Hlídání chatu na Kicku pro moderátory – zakázaná slova, odkazy, spam, statistiky. Funguje na Macu, Windows i iPhonu.">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
 <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png">
@@ -20,9 +21,9 @@
   h1 { font-size:26px; margin:0; }
   h1 span { color:#53FC18; }
   .head { display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
-  .badge { color:#8a8a8a; font-size:12px; padding:6px 10px;
+  .badge { color:#a2a2a2; font-size:12px; padding:6px 10px;
            border:1px solid #2e2e2e; border-radius:6px; margin-left:auto; }
-  .hint { color:#8a8a8a; font-size:12px; margin:10px 0 14px; }
+  .hint { color:#a2a2a2; font-size:12px; margin:10px 0 14px; }
   .ctrl { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:14px; }
   input[type=text], input[type=number] { background:#232323; border:1px solid #2e2e2e;
       border-radius:6px; padding:9px 10px; color:#eaeaea; font-size:16px; }
@@ -32,10 +33,10 @@
   button:hover { background:#333; }
   button.primary { background:#53FC18; color:#101010; font-weight:700; border:none; }
   button.primary:hover { background:#6bff3c; }
-  #status { color:#8a8a8a; font-size:13px; margin-left:auto; }
+  #status { color:#a2a2a2; font-size:13px; margin-left:auto; }
   .tabs { display:flex; gap:4px; border-bottom:1px solid #2e2e2e; margin-bottom:14px; }
   .tabs button { border:none; border-radius:8px 8px 0 0; background:#191919;
-                 color:#8a8a8a; padding:10px 18px; }
+                 color:#a2a2a2; padding:10px 18px; }
   .tabs button.on { background:#1b1b1b; color:#53FC18; font-weight:600; }
   .tab { display:none; }
   .tab.on { display:block; }
@@ -48,8 +49,8 @@
   .row { padding:5px 12px; border-bottom:1px solid #202020; word-break:break-word; }
   .row b { font-weight:600; }
   .normal{color:#eaeaea} .red{color:#ff5c5c} .orange{color:#ffb84d}
-  .purple{color:#c58cff} .blue{color:#6db8ff} .dim{color:#666} .muted{color:#8a8a8a}
-  .rule { color:#8a8a8a; font-size:12px; }
+  .purple{color:#c58cff} .blue{color:#6db8ff} .dim{color:#909090} .muted{color:#a2a2a2}
+  .rule { color:#a2a2a2; font-size:12px; }
   .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
   fieldset { border:1px solid #2e2e2e; border-radius:8px; margin:0 0 14px; padding:14px 16px; }
   legend { color:#53FC18; font-weight:600; padding:0 6px; }
@@ -61,7 +62,7 @@
   .card { background:#1b1b1b; border:1px solid #2e2e2e; border-radius:8px;
           padding:12px 18px; min-width:150px; }
   .card .v { color:#53FC18; font-size:28px; font-weight:700; }
-  .card .t { color:#8a8a8a; font-size:12px; }
+  .card .t { color:#a2a2a2; font-size:12px; }
   table { width:100%; border-collapse:collapse; font-size:13px; }
   th,td { border:1px solid #2e2e2e; padding:7px 10px; text-align:left; }
   th { background:#1f1f1f; color:#53FC18; }
@@ -73,7 +74,7 @@
       font-weight:600; align-items:center; gap:14px; }
   .filterbar.on { display:flex; }
   .filterbar button { margin-left:auto; }
-  .foot { color:#666; font-size:12px; margin-top:22px; text-align:center; }
+  .foot { color:#909090; font-size:12px; margin-top:22px; text-align:center; }
   .ioshint { display:none; align-items:flex-start; gap:10px; background:#14240f;
       border:1px solid #53FC18; border-radius:8px; padding:11px 14px;
       margin-bottom:14px; font-size:13px; color:#eaeaea; }
@@ -113,6 +114,7 @@
 </style>
 </head>
 <body>
+<main>
 
 <div class="head">
   <h1>Kick <span>Hlídač</span> chatu</h1>
@@ -224,7 +226,9 @@
     <tbody id="historyBody"></tbody></table>
 </div>
 
-<div class="foot">Kick Hlídač chatu · webová verze pro Mac · data zůstávají jen v tomto prohlížeči</div>
+</main>
+
+<div class="foot">Kick Hlídač chatu · pro Mac, Windows i iPhone · data zůstávají jen v tomto prohlížeči</div>
 
 <script>
 const DEFAULT = {
