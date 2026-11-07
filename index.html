@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kick Hlídač chatu</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Kick Hlídač">
+<meta name="theme-color" content="#121212">
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; padding:20px 24px 28px; background:#121212; color:#eaeaea;
+         font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+         font-size:14px; line-height:1.5; }
+  h1 { font-size:26px; margin:0; }
+  h1 span { color:#53FC18; }
+  .head { display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+  .badge { color:#8a8a8a; font-size:12px; padding:6px 10px;
+           border:1px solid #2e2e2e; border-radius:6px; margin-left:auto; }
+  .hint { color:#8a8a8a; font-size:12px; margin:10px 0 14px; }
+  .ctrl { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:14px; }
+  input[type=text], input[type=number] { background:#232323; border:1px solid #2e2e2e;
+      border-radius:6px; padding:8px 10px; color:#eaeaea; font-size:14px; }
+  input:focus { outline:none; border-color:#53FC18; }
+  button { background:#2a2a2a; border:1px solid #3a3a3a; border-radius:6px;
+           padding:8px 14px; color:#eaeaea; font-size:14px; cursor:pointer; }
+  button:hover { background:#333; }
+  button.primary { background:#53FC18; color:#101010; font-weight:700; border:none; }
+  button.primary:hover { background:#6bff3c; }
+  #status { color:#8a8a8a; font-size:13px; margin-left:auto; }
+  .tabs { display:flex; gap:4px; border-bottom:1px solid #2e2e2e; margin-bottom:14px; }
+  .tabs button { border:none; border-radius:8px 8px 0 0; background:#191919;
+                 color:#8a8a8a; padding:10px 18px; }
+  .tabs button.on { background:#1b1b1b; color:#53FC18; font-weight:600; }
+  .tab { display:none; }
+  .tab.on { display:block; }
+  .split { display:grid; grid-template-columns:2fr 1fr; gap:14px; height:60vh; min-height:380px; }
+  .panel { background:#151515; border:1px solid #2e2e2e; border-radius:8px;
+           display:flex; flex-direction:column; overflow:hidden; }
+  .panel h3 { margin:0; padding:10px 14px; font-size:14px; font-weight:600;
+              border-bottom:1px solid #2e2e2e; }
+  .list { overflow-y:auto; flex:1; padding:6px 0; }
+  .row { padding:5px 12px; border-bottom:1px solid #202020; word-break:break-word; }
+  .row b { font-weight:600; }
+  .normal{color:#eaeaea} .red{color:#ff5c5c} .orange{color:#ffb84d}
+  .purple{color:#c58cff} .blue{color:#6db8ff} .dim{color:#666} .muted{color:#8a8a8a}
+  .rule { color:#8a8a8a; font-size:12px; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  fieldset { border:1px solid #2e2e2e; border-radius:8px; margin:0 0 14px; padding:14px 16px; }
+  legend { color:#53FC18; font-weight:600; padding:0 6px; }
+  label { display:flex; align-items:center; gap:8px; margin:7px 0; flex-wrap:wrap; }
+  label span.lbl { min-width:210px; color:#eaeaea; }
+  input[type=number] { width:110px; }
+  .wide { flex:1; min-width:200px; }
+  .cards { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px; }
+  .card { background:#1b1b1b; border:1px solid #2e2e2e; border-radius:8px;
+          padding:12px 18px; min-width:150px; }
+  .card .v { color:#53FC18; font-size:28px; font-weight:700; }
+  .card .t { color:#8a8a8a; font-size:12px; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th,td { border:1px solid #2e2e2e; padding:7px 10px; text-align:left; }
+  th { background:#1f1f1f; color:#53FC18; }
+  tr.clickable { cursor:pointer; }
+  tr.clickable:hover { background:#202020; }
+  .tables { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .filterbar { display:none; background:#14240f; border:1px solid #53FC18;
+      border-radius:6px; padding:9px 14px; margin-bottom:12px; color:#53FC18;
+      font-weight:600; align-items:center; gap:14px; }
+  .filterbar.on { display:flex; }
+  .filterbar button { margin-left:auto; }
+  .foot { color:#666; font-size:12px; margin-top:22px; text-align:center; }
+  @media (max-width:800px){ .split,.grid2,.tables{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+
+<div class="head">
+  <h1>Kick <span>Hlídač</span> chatu</h1>
+  <div class="badge">JEN HLÍDÁNÍ · nic nemaže, nikoho nebanuje</div>
+</div>
+<div class="hint">Funguje na Macu, Windows i v mobilu. Nic se neinstaluje. Zadej jen název kanálu a klikni Spustit hlídání.</div>
+
+<div class="ctrl">
+  <label><b>Kanál:</b></label>
+  <input type="text" id="channel" placeholder="např. spajkk">
+  <button class="primary" id="start">▶  Spustit hlídání</button>
+  <button id="clear">Vymazat</button>
+  <span id="status">Nespustěno</span>
+</div>
+
+<div class="tabs">
+  <button class="on" data-tab="chat">💬  Živý chat</button>
+  <button data-tab="rules">⚙️  Pravidla</button>
+  <button data-tab="stats">📊  Statistiky</button>
+  <button data-tab="history">🗂  Historie</button>
+</div>
+
+<!-- ZIVY CHAT -->
+<div class="tab on" id="tab-chat">
+  <div class="split">
+    <div class="panel">
+      <h3>Všechny zprávy</h3>
+      <div class="list" id="chatList"></div>
+    </div>
+    <div class="panel">
+      <h3>⚠  Upozornění <span id="alertCount" class="muted" style="font-weight:400"></span></h3>
+      <div class="list" id="alertList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- PRAVIDLA -->
+<div class="tab" id="tab-rules">
+  <div class="hint">Nastavení se ukládá do tohoto prohlížeče. Změny se projeví po zastavení a novém spuštění hlídání.</div>
+  <div class="grid2">
+    <div>
+      <fieldset><legend>Co je ve zprávě</legend>
+        <label><span class="lbl">Zakázaná slova (čárkou):</span><input class="wide" type="text" id="banned_words" placeholder="spam, reklama"></label>
+        <label><input type="checkbox" id="match_substring"> Hledat i uvnitř slova (chytí překlepy)</label>
+        <label><input type="checkbox" id="block_links"> Hlásit odkazy</label>
+        <label><span class="lbl">Povolené domény:</span><input class="wide" type="text" id="allowed_domains" placeholder="kick.com, twitch.tv"></label>
+        <label><span class="lbl">Max. podíl VELKÝCH písmen (%):</span><input type="number" id="max_caps_ratio" min="0" max="100"></label>
+        <label><span class="lbl">Alespoň tolik písmen:</span><input type="number" id="min_caps_length" min="1" max="200"></label>
+        <label><span class="lbl">Max. délka zprávy (znaků):</span><input type="number" id="max_length" min="0" max="2000"></label>
+      </fieldset>
+      <fieldset><legend>Jak často píše</legend>
+        <label><span class="lbl">Flood – kolik zpráv:</span><input type="number" id="flood_count" min="0" max="50"></label>
+        <label><span class="lbl">za kolik sekund:</span><input type="number" id="flood_seconds" min="1" max="300"></label>
+        <label><span class="lbl">Stejná zpráva tolikrát za sebou:</span><input type="number" id="repeat_count" min="0" max="20"></label>
+      </fieldset>
+    </div>
+    <div>
+      <fieldset><legend>Koho sledovat / ignorovat</legend>
+        <label><span class="lbl">Sledovaní uživatelé:</span><input class="wide" type="text" id="watched_users" placeholder="jména čárkou"></label>
+        <label><span class="lbl">Ignorovat uživatele:</span><input class="wide" type="text" id="ignore_users" placeholder="boti, moderátoři"></label>
+        <label><input type="checkbox" id="ignore_moderators"> Ignorovat moderátory a streamera</label>
+        <label><input type="checkbox" id="notify_newcomer"> Upozornit na nováčka (první zpráva od spuštění)</label>
+        <label><input type="checkbox" id="notify_watched"> Upozornit na sledované</label>
+      </fieldset>
+      <fieldset><legend>Program</legend>
+        <label><span class="lbl">Kontrolovat chat každých (s):</span><input type="number" id="poll_interval" min="1" max="60"></label>
+        <label><input type="checkbox" id="notify_sound"> Zvuk při upozornění</label>
+        <label><input type="checkbox" id="skip_initial"> Při startu nechat starší zprávy bez hodnocení</label>
+        <label><span class="lbl">Držet v paměti zpráv:</span><input type="number" id="max_messages" min="100" max="5000"></label>
+      </fieldset>
+      <button class="primary" id="saveRules" style="width:100%">💾  Uložit nastavení</button>
+    </div>
+  </div>
+</div>
+
+<!-- STATISTIKY -->
+<div class="tab" id="tab-stats">
+  <div class="cards">
+    <div class="card"><div class="v" id="stZpravy">0</div><div class="t">Zpráv</div></div>
+    <div class="card"><div class="v" id="stLidi">0</div><div class="t">Různých lidí</div></div>
+    <div class="card"><div class="v" id="stAlert">0</div><div class="t">Upozornění</div></div>
+    <div class="card"><div class="v" id="stDoba">–</div><div class="t">Hlídá od</div></div>
+  </div>
+  <div class="tables">
+    <div><h3>🏆 Kdo píše nejvíc</h3><div class="hint">Klikni na jméno → otevřou se jen jeho zprávy</div>
+      <table><thead><tr><th>Uživatel</th><th>Zpráv</th></tr></thead><tbody id="leaderBody"></tbody></table></div>
+    <div><h3>🚩 Nejčastější prohřešky</h3><div class="hint">Klikni na pravidlo → ukážou se jen ty zprávy</div>
+      <table><thead><tr><th>Pravidlo</th><th>Počet</th></tr></thead><tbody id="issueBody"></tbody></table></div>
+  </div>
+</div>
+
+<!-- HISTORIE -->
+<div class="tab" id="tab-history">
+  <div class="ctrl" style="margin-bottom:8px">
+    <label>Hledat:</label><input class="wide" type="text" id="search" placeholder="jméno nebo část zprávy">
+    <label><input type="checkbox" id="onlyAlerts"> Jen upozornění</label>
+    <button id="exportCsv">📄  Uložit jako CSV</button>
+  </div>
+  <div class="filterbar" id="filterbar">
+    <span id="filterText"></span>
+    <button id="clearFilter">✖  Zrušit filtr</button>
+  </div>
+  <table><thead><tr><th>Čas</th><th>Uživatel</th><th>Zpráva</th><th>Pravidlo</th></tr></thead>
+    <tbody id="historyBody"></tbody></table>
+</div>
+
+<div class="foot">Kick Hlídač chatu · webová verze pro Mac · data zůstávají jen v tomto prohlížeči</div>
+
+<script>
+const DEFAULT = {
+  channel:"spajkk", poll_interval:2, banned_words:[], match_substring:true,
+  block_links:true, allowed_domains:[], max_caps_ratio:70, min_caps_length:10,
+  max_length:300, flood_count:4, flood_seconds:10, repeat_count:3,
+  watched_users:[], ignore_users:[], ignore_moderators:true, notify_sound:true,
+  notify_newcomer:true, notify_watched:true, skip_initial:true, max_messages:800
+};
+const SERIOUS = ["SLOVO","ODKAZ","FLOOD","VELKA","DLOUHA","OPAKOVANI"];
+const LINK_RE = /(https?:\/\/|www\.|\b[a-z0-9-]+\.(?:cz|com|net|org|io|gg|tv|sk|eu|de|ru|info|me)\b)/i;
+const $ = id => document.getElementById(id);
+const esc = s => String(s==null?"":s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const list = s => String(s||"").split(",").map(x=>x.trim().replace(/^@/,"").toLowerCase()).filter(Boolean);
+
+let cfg = Object.assign({}, DEFAULT);
+try { const saved = JSON.parse(localStorage.getItem("kickhlidac") || "{}");
+      for (const k in DEFAULT) if (k in saved) cfg[k] = saved[k]; } catch(e){}
+
+const S = { running:false, timer:null, channelId:null, seen:new Set(),
+  msgs:[], alerts:[], userCounts:new Map(), issueCounts:new Map(),
+  seenUsers:new Set(), recent:new Map(), lastText:new Map(), repeat:new Map(),
+  firstPass:true, startedAt:null, userFilter:null, ruleFilter:null, audio:null };
+
+function saveCfg(){
+  cfg.channel = $("channel").value.trim();
+  cfg.banned_words = list($("banned_words").value);
+  cfg.match_substring = $("match_substring").checked;
+  cfg.block_links = $("block_links").checked;
+  cfg.allowed_domains = list($("allowed_domains").value);
+  cfg.max_caps_ratio = +$("max_caps_ratio").value;
+  cfg.min_caps_length = +$("min_caps_length").value;
+  cfg.max_length = +$("max_length").value;
+  cfg.flood_count = +$("flood_count").value;
+  cfg.flood_seconds = +$("flood_seconds").value;
+  cfg.repeat_count = +$("repeat_count").value;
+  cfg.watched_users = list($("watched_users").value);
+  cfg.ignore_users = list($("ignore_users").value);
+  cfg.ignore_moderators = $("ignore_moderators").checked;
+  cfg.notify_newcomer = $("notify_newcomer").checked;
+  cfg.notify_watched = $("notify_watched").checked;
+  cfg.poll_interval = +$("poll_interval").value;
+  cfg.notify_sound = $("notify_sound").checked;
+  cfg.skip_initial = $("skip_initial").checked;
+  cfg.max_messages = +$("max_messages").value;
+  localStorage.setItem("kickhlidac", JSON.stringify(cfg));
+}
+function fillCfg(){
+  $("channel").value = cfg.channel;
+  $("banned_words").value = (cfg.banned_words||[]).join(", ");
+  $("allowed_domains").value = (cfg.allowed_domains||[]).join(", ");
+  $("watched_users").value = (cfg.watched_users||[]).join(", ");
+  $("ignore_users").value = (cfg.ignore_users||[]).join(", ");
+  for (const k of ["match_substring","block_links","ignore_moderators","notify_newcomer","notify_watched","notify_sound","skip_initial"])
+    $(k).checked = !!cfg[k];
+  for (const k of ["max_caps_ratio","min_caps_length","max_length","flood_count","flood_seconds","repeat_count","poll_interval","max_messages"])
+    $(k).value = cfg[k];
+}
+
+function status(t){ $("status").textContent = t; }
+function setTab(name){
+  document.querySelectorAll(".tabs button").forEach(b => b.classList.toggle("on", b.dataset.tab===name));
+  document.querySelectorAll(".tab").forEach(t => t.classList.toggle("on", t.id==="tab-"+name));
+}
+
+function beep(){
+  if(!cfg.notify_sound) return;
+  try{
+    if(!S.audio) S.audio = new (window.AudioContext||window.webkitAudioContext)();
+    const c=S.audio, o=c.createOscillator(), g=c.createGain();
+    o.connect(g); g.connect(c.destination); o.type="sine"; o.frequency.value=880;
+    g.gain.setValueAtTime(0.07,c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+0.15);
+    o.start(); o.stop(c.currentTime+0.16);
+  }catch(e){}
+}
+
+function emoteText(s){ return String(s||"").replace(/\[emote:\d+:([^\]]+)\]/g, (_,n)=>":"+n+":"); }
+
+function normalize(r){
+  const s=r.sender||{}, id=s.identity||{}, badges=id.badges||[];
+  const roles=new Set(badges.map(b=>String(b.type||"").toLowerCase()));
+  const slug=String(s.slug||s.username||"?").toLowerCase().replace(/^@/,"");
+  return { id:r.id, username:s.username||s.slug||"?", slug,
+    content:emoteText(r.content), created_at:r.created_at,
+    isMod:["moderator","broadcaster","admin","staff"].some(x=>roles.has(x)) };
+}
+function timeOf(s){
+  try{ return new Date(s).toLocaleTimeString("cs-CZ",{hour:"2-digit",minute:"2-digit",second:"2-digit"}); }
+  catch(e){ return ""; }
+}
+
+function check(m){
+  const issues=[];
+  if(cfg.ignore_users.includes(m.slug)) return {issues:[],newcomer:false};
+  const watched = cfg.watched_users.includes(m.slug) && cfg.notify_watched;
+  if(cfg.ignore_moderators && m.isMod && !watched) return {issues:[],newcomer:false};
+
+  const newcomer = !S.seenUsers.has(m.slug);
+  S.seenUsers.add(m.slug);
+  if(cfg.notify_newcomer && newcomer) issues.push("NOVACEK");
+  if(watched) issues.push("SLEDOVANY");
+
+  const low=m.content.toLowerCase();
+  for(const w of cfg.banned_words){
+    const hit = cfg.match_substring ? low.includes(w) : new RegExp("\\b"+w.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"\\b").test(low);
+    if(hit) issues.push("SLOVO: "+w);
+  }
+  if(cfg.block_links && LINK_RE.test(m.content)){
+    if(!cfg.allowed_domains.some(d=>d && low.includes(d))) issues.push("ODKAZ");
+  }
+  const letters=[...m.content].filter(c=>/[a-zA-Z\u00C0-\u024F]/.test(c));
+  if(cfg.max_caps_ratio && letters.length>=cfg.min_caps_length){
+    const up=letters.filter(c=>c===c.toUpperCase() && c!==c.toLowerCase()).length;
+    const pct=Math.round(100*up/letters.length);
+    if(pct>=cfg.max_caps_ratio) issues.push("VELKA PISMENA ("+pct+" %)");
+  }
+  if(cfg.max_length && m.content.length>cfg.max_length) issues.push("DLOUHA ZPRAVA ("+m.content.length+" zn.)");
+
+  const now=Date.now();
+  let q=S.recent.get(m.slug)||[]; q.push(now);
+  q=q.filter(t=>now-t<=cfg.flood_seconds*1000); S.recent.set(m.slug,q);
+  if(cfg.flood_count && q.length>=cfg.flood_count) issues.push("FLOOD ("+q.length+" zprav / "+cfg.flood_seconds+" s)");
+
+  if(cfg.repeat_count){
+    const prev=S.lastText.get(m.slug);
+    const n = prev===low ? (S.repeat.get(m.slug)||0)+1 : 1;
+    S.repeat.set(m.slug,n); S.lastText.set(m.slug,low);
+    if(n>=cfg.repeat_count) issues.push("OPAKOVANI ("+n+"x)");
+  }
+  return {issues,newcomer};
+}
+
+const keyOf = i => i.split(":")[0].split("(")[0].trim();
+function cls(m){
+  if(m.isMod) return "dim";
+  if(!m.issues.length) return "normal";
+  if(m.issues.some(i=>i.startsWith("SLOVO")||i.startsWith("ODKAZ"))) return "red";
+  if(m.issues.some(i=>i.startsWith("SLEDOVANY"))) return "purple";
+  if(m.issues.some(i=>i.startsWith("NOVACEK"))) return "blue";
+  return "orange";
+}
+
+async function poll(){
+  if(!S.channelId) return;
+  try{
+    const r=await fetch("https://kick.com/api/v2/channels/"+S.channelId+"/messages",
+                        {headers:{Accept:"application/json"}});
+    if(!r.ok) throw new Error("HTTP "+r.status);
+    const j=await r.json();
+    const raw=(j.data&&j.data.messages)||[];
+    const fresh=[];
+    for(const x of [...raw].reverse()) if(x.id && !S.seen.has(x.id)) { S.seen.add(x.id); fresh.push(x); }
+    if(S.seen.size>3000) S.seen=new Set([...S.seen].slice(-1500));
+    for(const x of fresh){
+      const m=normalize(x);
+      const res = (S.firstPass && cfg.skip_initial) ? {issues:[],newcomer:false} : check(m);
+      if(S.firstPass && cfg.skip_initial) S.seenUsers.add(m.slug);
+      m.issues=res.issues; m.time=timeOf(m.created_at);
+      S.msgs.push(m);
+      if(S.msgs.length>cfg.max_messages) S.msgs.shift();
+      S.userCounts.set(m.username,(S.userCounts.get(m.username)||0)+1);
+      renderRow(m);
+      if(m.issues.length){
+        S.alerts.push(m);
+        for(const i of m.issues){ const k=keyOf(i); S.issueCounts.set(k,(S.issueCounts.get(k)||0)+1); }
+        renderAlert(m);
+        if(m.issues.some(i=>SERIOUS.some(s=>i.startsWith(s)))) beep();
+      }
+    }
+    S.firstPass=false;
+    if(fresh.length) refreshAll();
+  }catch(e){ status("Chyba čtení chatu: "+e.message); }
+}
+
+function renderRow(m){
+  const el=$("chatList"), d=document.createElement("div");
+  d.className="row "+cls(m);
+  const tag=m.issues.length?` <span class="rule">« ${esc(m.issues.join(" | "))}</span>`:"";
+  d.innerHTML=`<span class="muted">[${esc(m.time)}]</span> <b>${esc(m.username)}</b>: ${esc(m.content)}${tag}`;
+  el.appendChild(d);
+  while(el.children.length>cfg.max_messages) el.removeChild(el.firstChild);
+  el.scrollTop=el.scrollHeight;
+}
+function renderAlert(m){
+  const el=$("alertList"), d=document.createElement("div");
+  d.className="row "+cls(m);
+  d.innerHTML=`<span class="muted">[${esc(m.time)}]</span> <b>${esc(m.username)}</b>: ${esc(m.content)} → <span class="rule">${esc(m.issues.join(", "))}</span>`;
+  el.appendChild(d); el.scrollTop=el.scrollHeight;
+  $("alertCount").textContent="("+S.alerts.length+")";
+}
+
+function refreshAll(){
+  $("stZpravy").textContent=S.msgs.length;
+  $("stLidi").textContent=S.userCounts.size;
+  $("stAlert").textContent=S.alerts.length;
+  const top=[...S.userCounts.entries()].sort((a,b)=>b[1]-a[1]).slice(0,10);
+  $("leaderBody").innerHTML=top.map(([n,c])=>
+    `<tr class="clickable" data-user="${esc(n)}"><td>${esc(n)}</td><td>${c}</td></tr>`).join("")||"";
+  const ti=[...S.issueCounts.entries()].sort((a,b)=>b[1]-a[1]).slice(0,10);
+  $("issueBody").innerHTML=ti.map(([n,c])=>
+    `<tr class="clickable" data-rule="${esc(n)}"><td>${esc(n)}</td><td>${c}</td></tr>`).join("")||"";
+  refreshHistory();
+}
+
+function refreshHistory(){
+  const q=$("search").value.trim().toLowerCase(), only=$("onlyAlerts").checked;
+  const rows=S.msgs.filter(m=>{
+    if(only && !m.issues.length) return false;
+    if(S.userFilter && m.username!==S.userFilter) return false;
+    if(S.ruleFilter && !m.issues.some(i=>keyOf(i)===S.ruleFilter)) return false;
+    if(q && !(m.username.toLowerCase().includes(q)||m.content.toLowerCase().includes(q))) return false;
+    return true;
+  }).slice(-500).reverse();
+  $("historyBody").innerHTML=rows.map(m=>
+    `<tr><td>${esc(m.time)}</td><td>${esc(m.username)}</td><td>${esc(m.content)}</td><td>${esc(m.issues.join(", "))}</td></tr>`).join("")||"";
+  const bar=$("filterbar");
+  if(S.userFilter){ bar.classList.add("on"); $("filterText").textContent="👤  Zprávy uživatele  "+S.userFilter+"   ·   "+rows.length+" zpráv"; }
+  else if(S.ruleFilter){ bar.classList.add("on"); $("filterText").textContent="🚩  Zprávy s pravidlem  "+S.ruleFilter+"   ·   "+rows.length+" zpráv"; }
+  else bar.classList.remove("on");
+}
+
+function showUser(name){ S.userFilter=name; S.ruleFilter=null; $("search").value=""; $("onlyAlerts").checked=false; setTab("history"); refreshHistory(); }
+function showRule(rule){ S.ruleFilter=rule; S.userFilter=null; $("search").value=""; $("onlyAlerts").checked=false; setTab("history"); refreshHistory(); }
+
+async function start(){
+  saveCfg();
+  const slug=cfg.channel.trim().replace(/^@/,"");
+  if(!slug){ status("Zadej název kanálu."); return; }
+  status("Připojuji se…");
+  try{
+    const r=await fetch("https://kick.com/api/v2/channels/"+encodeURIComponent(slug),{headers:{Accept:"application/json"}});
+    if(r.status===404){ status("Kanál „"+slug+"“ neexistuje."); return; }
+    if(!r.ok) throw new Error("HTTP "+r.status);
+    S.channelId=(await r.json()).id;
+  }catch(e){ status("Nepodařilo se spojit s Kickem: "+e.message); return; }
+  S.running=true; S.firstPass=true; S.seen=new Set(); S.seenUsers=new Set();
+  S.startedAt=new Date();
+  $("stDoba").textContent=S.startedAt.toLocaleTimeString("cs-CZ",{hour:"2-digit",minute:"2-digit"});
+  $("start").textContent="⏹  Zastavit hlídání";
+  status("Hlídám kanál "+slug+" (ID "+S.channelId+")");
+  try{ if(!S.audio) S.audio=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){}
+  poll();
+  S.timer=setInterval(poll, Math.max(1,cfg.poll_interval)*1000);
+}
+function stop(){
+  S.running=false; clearInterval(S.timer); S.timer=null;
+  $("start").textContent="▶  Spustit hlídání"; status("Zastaveno");
+}
+function clearAll(){
+  stop();
+  S.msgs=[]; S.alerts=[]; S.userCounts=new Map(); S.issueCounts=new Map();
+  S.seen=new Set(); S.seenUsers=new Set(); S.recent=new Map(); S.lastText=new Map(); S.repeat=new Map();
+  S.userFilter=null; S.ruleFilter=null;
+  $("chatList").innerHTML=""; $("alertList").innerHTML=""; $("alertCount").textContent="";
+  $("stZpravy").textContent="0"; $("stLidi").textContent="0"; $("stAlert").textContent="0"; $("stDoba").textContent="–";
+  refreshAll(); status("Vymazáno");
+}
+function exportCsv(){
+  const head="cas,uzivatel,zprava,pravidlo\n";
+  const q=v=>'"'+String(v==null?"":v).replace(/"/g,'""')+'"';
+  const body=S.msgs.map(m=>[m.time,m.username,m.content,m.issues.join(", ")].map(q).join(",")).join("\n");
+  const blob=new Blob(["\ufeff"+head+body],{type:"text/csv;charset=utf-8"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+  a.download="historie_chatu.csv"; a.click(); URL.revokeObjectURL(a.href);
+  status("Historie uložena");
+}
+
+document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
+$("start").onclick=()=>S.running?stop():start();
+$("clear").onclick=clearAll;
+$("saveRules").onclick=()=>{ saveCfg(); status("Nastavení uloženo – zastav a znovu spusť hlídání."); };
+$("search").oninput=()=>{ S.userFilter=null; S.ruleFilter=null; refreshHistory(); };
+$("onlyAlerts").onchange=refreshHistory;
+$("exportCsv").onclick=exportCsv;
+$("clearFilter").onclick=()=>{ S.userFilter=null; S.ruleFilter=null; refreshHistory(); };
+$("leaderBody").onclick=e=>{ const tr=e.target.closest("tr[data-user]"); if(tr) showUser(tr.dataset.user); };
+$("issueBody").onclick=e=>{ const tr=e.target.closest("tr[data-rule]"); if(tr) showRule(tr.dataset.rule); };
+$("channel").onkeydown=e=>{ if(e.key==="Enter" && !S.running) start(); };
+
+fillCfg(); refreshAll(); status("Připraveno – zadej kanál a klikni Spustit hlídání.");
+</script>
+</body>
+</html>
